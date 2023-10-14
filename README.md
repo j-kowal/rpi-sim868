@@ -1,5 +1,7 @@
 # RPi SIM868
 
+<img align="right" style="width:40%;" src="https://github.com/j-kowal/rpi-sim868/assets/23199671/6671900e-0038-42e0-84d9-8a0091c00d39" alt="hat"/>
+
 [![crates.io](https://img.shields.io/crates/v/rpi_sim868)](https://crates.io/crates/rpi_sim868)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Minimum rustc version](https://img.shields.io/badge/rustc-v1.56.0-blue.svg)](https://blog.rust-lang.org/2021/10/21/Rust-1.56.0.html)
