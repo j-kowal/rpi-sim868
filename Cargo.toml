@@ -1,0 +1,37 @@
+[package]
+name = "rpi_sim868"
+version = "0.1.0"
+edition = "2021"
+authors = ["Jan Kowal <janokowal@outlook.com>"]
+description = "RPi SIM868 is a crate designed to facilitate interaction with the Waveshare SIM868 HAT for Raspberry Pi."
+documentation = "https://docs.rs/rpi_sim868"
+homepage = "https://github.com/j-kowal/rpi-sim868"
+license = "MIT"
+readme = "README.md"
+rust-version = "1.56"
+categories = ["embedded"]
+keywords = ["raspberry", "pi", "sim800", "waveshare", "sim868"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+chrono = "0.4.31"
+colored = "2.0.4"
+lazy_static = "1.4.0"
+log = "0.4.20"
+priority-queue = "1.3.2"
+regex = "1.9.5"
+rppal = "0.14.1"
+serde = { version = "1.0.189", features = ["derive"] }
+serde_json = "1.0.107"
+serde_url_params = "0.2.1"
+simple_logger = "4.2.0"
+url = "2.4.1"
+
+[dependencies.uuid]
+version = "1.4.1"
+features = [
+    "v4",                # Lets you generate random UUIDs
+    "fast-rng",          # Use a faster (but still sufficiently random) RNG
+    "macro-diagnostics", # Enable better diagnostics for compile-time UUIDs
+]
