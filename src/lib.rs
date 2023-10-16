@@ -1,10 +1,11 @@
 //! # RPi SIM868
-//! RPi SIM868 is a crate designed to facilitate interaction with the [Waveshare SIM868 HAT](https://www.waveshare.com/gsm-gprs-gnss-hat.htm) for Raspberry Pi.
-//! It features a non-blocking design and is well-suited for use within a multi-threaded architecture.
-//! The crate leverages native Rust threads and an integrated task scheduler based on a priority queue.
-//! With each interaction, a new thread is initiated and enqueued with a priority, ensuring execution as soon as the serial port becomes available.
-//! Each method (excluding HAT on/off) returns a [`TaskJoinHandle<T>`], where `T` represents the type returned after parsing and analyzing the serial output, if applicable.
-//! Tasks related to phone calls are treated as first-class citizens with high priority, mitigating delays in answering or concluding calls.
+//!
+//! RPi SIM868 is a Rust crate designed to simplify interaction with the [Waveshare SIM868 HAT](https://www.waveshare.com/gsm-gprs-gnss-hat.htm) for Raspberry Pi.
+//! It utilizes the [`tokio`] runtime for managing asynchronous tasks and includes its own task scheduler based on a priority queue.
+//! Each method call initiates a new task, which is enqueued with a priority to ensure swift execution as soon as the serial port becomes available.
+//!
+//! Methods (except for [`hat::Hat::turn_on`]) return [`TaskJoinHandle<T>`], where `T` represents the type resulting from parsing and analyzing the serial output, if applicable.
+//! Tasks related to phone calls are treated as first-class citizens with high priority, reducing delays in answering or concluding calls.
 //!
 //! RPi SIM868 was conceived following a high-altitude balloon launch where the HAT served as a backup tracking device.
 //! The initial software, written in Python, lacked the performance and safety synonymous with Rust.
@@ -16,35 +17,43 @@
 //! ## Example usage
 //! ```
 //! use rpi_sim868::{SIM868, TaskJoinHandle};
-//! use std::{thread::sleep, time::Duration};
+//! use tokio::time::sleep;
+//! use std::time::Duration;
 //!
-//! let sim: SIM866 = SIM868::new("/dev/ttyS0", 115200, rpi_sim868::LogLevelFilter::Error);
+//! #[tokio:main]
+//! async fn main() -> Result<(), Box<dyn std::error::Error>> {
+//!     let sim: SIM866 = SIM868::new("/dev/ttyS0", 115200, rpi_sim868::LogLevelFilter::Error);
 //!
-//! sim.turn_on();
+//!     sim.turn_on().await?;
 //!
-//! // Waiting until the network will be available
-//! while let Ok(strength) = sim.hat.network_strength().join().expect("thread should join") {
-//!     if strength > 0 {
-//!         break;
+//!     // waiting for the GSM network connection...
+//!     while let Ok(strength) = sim.hat.network_strength().await? {
+//!         if strength > 0 {
+//!             break;
+//!         }
+//!         sleep(Duration::from_secs(2)).await;
 //!     }
-//!     sleep(Duration::from_secs(2));
+//!
+//!     // task is spawned by tokio::spawn and starts in the background
+//!     let send_sms: TaskJoinHandle<()> = sim.sms.send("+4799999999", "Hello!");
+//!
+//!     /*
+//!         Some other operations...
+//!     */
+//!
+//!     // the .await? returns the task Result or errors with tokio::task::JoinError
+//!     match send_sms.await? {
+//!         Ok(_) => println!("the SMS has been sent."),
+//!         Err(e) => println!("Problem with sending the SMS: {e:?}"),
+//!     }
+//!
+//!     sim.hat.turn_off().await??;
+//!
+//!     Ok(())
 //! }
-//!
-//! let send_sms: TaskJoinHandle<()> = sim.sms.send("+4799999999", "Hello!");
-//!
-//! /*
-//!     Some other operations...
-//! */
-//!
-//! match send_sms.join().expect("thread should join") {
-//!     Ok(_) => println!("the SMS has been sent."),
-//!     Err(e) => println!("Problem with sending the SMS: {e:?}"),
-//! }
-//!
-//! let _ = sim.turn_off().join();
 //! ```
 
-#![doc(html_root_url = "https://docs.rs/rpi_sim868/0.1.0")]
+#![doc(html_root_url = "https://docs.rs/rpi_sim868/0.1.1")]
 
 pub mod gnss;
 pub mod gprs;
@@ -62,7 +71,8 @@ pub use log::LevelFilter as LogLevelFilter;
 use lazy_static::lazy_static;
 use regex::Regex;
 use simple_logger::SimpleLogger;
-use std::{sync::Arc, thread::JoinHandle};
+use std::sync::Arc;
+use tokio::task::JoinHandle;
 
 /// Every method, except [`hat::Hat::turn_on`] (which is blocking), returns a `TaskJoinHandle<T>`.
 pub type TaskJoinHandle<T> = JoinHandle<Result<T, error::Error>>;

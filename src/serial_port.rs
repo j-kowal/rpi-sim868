@@ -6,14 +6,13 @@ use colored::Colorize;
 use priority_queue::PriorityQueue;
 use rppal::uart::{Parity, Uart};
 use std::{
-    sync::{Arc, Mutex, RwLock},
-    thread::{sleep, spawn},
+    sync::{Arc, Mutex},
     time::{Duration, Instant},
 };
+use tokio::{spawn, sync::RwLock, time::sleep};
 use uuid::Uuid;
 
 const MUTEX_POISONED_MSG: &str = "Critical error: Mutex is poisoned.";
-const RWLOCK_ERROR: &str = "Critical error: RwLock error.";
 
 pub struct SerialPort {
     uart: Arc<Mutex<Uart>>,
@@ -34,21 +33,17 @@ fn info_log(task_id: &Uuid, msg: &str) {
     log::info!("{} - {msg}", format!("[{task_id}]").yellow())
 }
 
-fn add_to_queue(serial_port: &Arc<SerialPort>, priority: TaskPriority) -> Uuid {
+async fn add_to_queue(serial_port: &Arc<SerialPort>, priority: TaskPriority) -> Uuid {
     let task_id: Uuid = Uuid::new_v4();
     debug_log(&task_id, &format!("created with {priority:?} priority."));
-    serial_port
-        .queue
-        .write()
-        .expect(RWLOCK_ERROR)
-        .push(task_id, priority);
+    serial_port.queue.write().await.push(task_id, priority);
     task_id
 }
 
-fn await_in_queue(task_id: &Uuid, serial_port: &Arc<SerialPort>) {
+async fn await_in_queue(task_id: &Uuid, serial_port: &Arc<SerialPort>) {
     loop {
-        let queue: std::sync::RwLockReadGuard<'_, PriorityQueue<Uuid, TaskPriority>> =
-            serial_port.queue.read().expect(RWLOCK_ERROR);
+        let queue: tokio::sync::RwLockReadGuard<'_, PriorityQueue<Uuid, TaskPriority>> =
+            serial_port.queue.read().await;
         let (next, _) = queue
             .peek()
             .expect("Critical error: task queue is corrupted.");
@@ -57,16 +52,12 @@ fn await_in_queue(task_id: &Uuid, serial_port: &Arc<SerialPort>) {
         }
 
         drop(queue);
-        sleep(Duration::from_millis(100));
+        sleep(Duration::from_millis(100)).await;
     }
 }
 
-fn remove_from_queue(task_id: &Uuid, serial_port: &Arc<SerialPort>) {
-    serial_port
-        .queue
-        .write()
-        .expect(RWLOCK_ERROR)
-        .remove(&task_id);
+async fn remove_from_queue(task_id: &Uuid, serial_port: &Arc<SerialPort>) {
+    serial_port.queue.write().await.remove(&task_id);
     debug_log(task_id, "removed from the queue.");
 }
 
@@ -135,14 +126,14 @@ where
     T1: 'static + Send,
     T2: 'static + Send,
 {
-    spawn(move || -> ResolverReturn<T1> {
-        let task_id: Uuid = add_to_queue(&serial_port, priority);
+    spawn(async move {
+        let task_id: Uuid = add_to_queue(&serial_port, priority).await;
         if let Some(msg) = log_msg {
             info_log(&task_id, &msg);
         }
-        await_in_queue(&task_id, &serial_port);
+        await_in_queue(&task_id, &serial_port).await;
         let result: Result<T1, Error> = task_fn(&serial_port, &task_id, arguments);
-        remove_from_queue(&task_id, &serial_port);
+        remove_from_queue(&task_id, &serial_port).await;
         result
     })
 }

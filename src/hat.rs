@@ -13,7 +13,6 @@ use std::{sync::Arc, thread::sleep, time::Duration};
 use uuid::Uuid;
 
 const TOGGLE_POWER_PIN: u8 = 4;
-const THREAD_ERROR: &str = "Critical error: Thread was unable to join.";
 
 pub struct Hat {
     serial_port: Arc<SerialPort>,
@@ -98,8 +97,8 @@ impl Hat {
     }
 
     /// Turns on the HAT (only if connected to the GPIO pin).
-    pub fn turn_on(&self) -> ResolverReturn<()> {
-        match self.is_on().join().expect(THREAD_ERROR) {
+    pub async fn turn_on(&self) -> ResolverReturn<()> {
+        match self.is_on().await? {
             Ok(_) => Err(Error::HatAlreadyOn),
             Err(e) => match e.kind() {
                 ErrorKind::NotResolved => {
