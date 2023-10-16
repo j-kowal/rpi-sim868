@@ -7,7 +7,7 @@
 //! #### Request's data examples
 //! ```
 //! #[derive(serde::Serialize)]
-//! struct Cordinates {
+//! struct Coordinates {
 //!     lat: f32,
 //!     lon: f32,
 //! }

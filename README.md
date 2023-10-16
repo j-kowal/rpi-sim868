@@ -8,11 +8,11 @@
 
 ### [Documentation](https://docs.rs/rpi_sim868)
 
-RPi SIM868 is a crate designed to facilitate interaction with the Waveshare SIM868 HAT for Raspberry Pi. It features a non-blocking design and is well-suited for use within a multi-threaded architecture. 
+RPi SIM868 is a Rust crate designed to simplify interaction with the [Waveshare SIM868 HAT](https://www.waveshare.com/gsm-gprs-gnss-hat.htm) for Raspberry Pi. It utilizes the [Tokio](https://tokio.rs) runtime for managing asynchronous tasks and includes its own task scheduler based on a priority queue.
 
-The crate leverages native Rust threads and an integrated task scheduler based on a priority queue. With each interaction, a new thread is initiated and enqueued with a priority, ensuring execution as soon as the serial port becomes available. 
+Each method call initiates a new task, which is enqueued with a priority to ensure swift execution as soon as the serial port becomes available. 
 
-Each method (excluding `HAT::turn_on`) returns a `TaskJoinHandle<T>`, where `T` represents the type returned after parsing and analyzing the serial output, if applicable. Tasks related to phone calls are treated as first-class citizens with high priority, mitigating delays in answering or concluding calls.
+Methods (except for `HAT::turn_on`) return `TaskJoinHandle<T>`, where `T` represents the type resulting from parsing and analyzing the serial output, if applicable. Tasks related to phone calls are treated as first-class citizens with high priority, reducing delays in answering or concluding calls.
 
 RPi SIM868 was conceived following a high-altitude balloon launch where the HAT served as a backup tracking device. The initial software, written in Python, lacked the performance and safety synonymous with Rust.
 

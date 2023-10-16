@@ -20,6 +20,7 @@ pub enum ErrorKind {
     SmsProblemWithReadingMessages,
     SmsProblemWithSettingTextMode,
     SmsRemoveMessageFailed,
+    TokioJoinError,
     Uart,
     UrlParse,
 }
@@ -47,6 +48,7 @@ pub enum Error {
     SmsProblemWithReadingMessages,
     SmsProblemWithSettingTextMode,
     SmsRemoveMessageFailed,
+    TokioJoinError(tokio::task::JoinError),
     Uart(rppal::uart::Error),
     UrlParse(url::ParseError),
 }
@@ -74,6 +76,7 @@ impl std::fmt::Display for Error {
             Error::SmsProblemWithReadingMessages => write!(f, "SMS - problem with reading the messages."),
             Error::SmsProblemWithSettingTextMode => write!(f, "SMS - problem with setting the text mode."),
             Error::SmsRemoveMessageFailed => write!(f, "SMS - problem with removing the message/s."),
+            Error::TokioJoinError(ref err) => write!(f, "Tokio task join error: {}", err),
             Error::Uart(ref err) => write!(f, "Uart error: {}", err),
             Error::UrlParse(ref err) => write!(f, "URL parsing error: {}", err),
         }
@@ -105,6 +108,7 @@ impl Error {
             Error::SmsProblemWithReadingMessages => ErrorKind::SmsProblemWithReadingMessages,
             Error::SmsProblemWithSettingTextMode => ErrorKind::SmsProblemWithSettingTextMode,
             Error::SmsRemoveMessageFailed => ErrorKind::SmsRemoveMessageFailed,
+            Error::TokioJoinError(ref _e) => ErrorKind::TokioJoinError,
             Error::Uart(ref _e) => ErrorKind::Uart,
             Error::UrlParse(ref _e) => ErrorKind::UrlParse,
         }
@@ -132,5 +136,11 @@ impl From<serde_url_params::Error> for Error {
 impl From<serde_json::Error> for Error {
     fn from(err: serde_json::Error) -> Error {
         Error::JsonSerialisationFailed(err)
+    }
+}
+
+impl From<tokio::task::JoinError> for Error {
+    fn from(err: tokio::task::JoinError) -> Error {
+        Error::TokioJoinError(err)
     }
 }
