@@ -1,0 +1,28 @@
+name: Rust
+
+on: [push, pull_request]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    strategy:
+        matrix:
+          include:
+          - target: "armv7-unknown-linux-gnueabihf"
+            linker: "arm-linux-gnueabihf-gcc"
+            dependencies: "crossbuild-essential-armhf"
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Install target
+      run: rustup target add ${{ matrix.target }}
+    - name: Install dependencies
+      run: sudo apt-get -qq install ${{ matrix.dependencies }}
+    - name: Build (debug)
+      run: cargo build --all-features --target ${{ matrix.target }} --config target.${{ matrix.target }}.linker=\"${{ matrix.linker }}\"
+    - name: Build (release)
+      run: cargo build --all-features --target ${{ matrix.target }} --config target.${{ matrix.target }}.linker=\"${{ matrix.linker }}\" --release
