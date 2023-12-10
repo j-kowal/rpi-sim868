@@ -22,9 +22,9 @@
 //!
 //! #[tokio:main]
 //! async fn main() -> Result<(), Box<dyn std::error::Error>> {
-//!     let sim: SIM866 = SIM868::new("/dev/ttyS0", 115200, rpi_sim868::LogLevelFilter::Error);
+//!     let sim: SIM868 = SIM868::new("/dev/ttyS0", 115200, rpi_sim868::LogLevelFilter::Error);
 //!
-//!     sim.turn_on().await?;
+//!     sim.hat.turn_on().await?;
 //!
 //!     // waiting for the GSM network connection...
 //!     while let Ok(strength) = sim.hat.network_strength().await? {
