@@ -1,6 +1,6 @@
 [package]
 name = "rpi_sim868"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 authors = ["Jan Kowal <janokowal@outlook.com>"]
 description = "RPi SIM868 is a crate designed to facilitate interaction with the Waveshare SIM868 HAT for Raspberry Pi."
@@ -26,6 +26,6 @@ serde = { version = "1.0.189", features = ["derive"] }
 serde_json = "1.0.107"
 serde_url_params = "0.2.1"
 simple_logger = "4.2.0"
-tokio = { version = "1", features=["rt-multi-thread", "sync", "time"] }
+tokio = { version = "1", features = ["rt-multi-thread", "sync", "time"] }
 url = "2.4.1"
-uuid = { version = "1.4.1", features=["v4", "fast-rng", "macro-diagnostics"] }
+uuid = { version = "1.4.1", features = ["v4", "fast-rng", "macro-diagnostics"] }
