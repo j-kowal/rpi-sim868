@@ -20,7 +20,7 @@
 //! use tokio::time::sleep;
 //! use std::time::Duration;
 //!
-//! #[tokio:main]
+//! #[tokio::main]
 //! async fn main() -> Result<(), Box<dyn std::error::Error>> {
 //!     let sim: SIM868 = SIM868::new("/dev/ttyS0", 115200, rpi_sim868::LogLevelFilter::Error);
 //!
