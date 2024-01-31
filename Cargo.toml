@@ -1,6 +1,6 @@
 [package]
 name = "rpi_sim868"
-version = "0.1.5"
+version = "0.1.6"
 edition = "2021"
 authors = ["Jan Kowal <janokowal@outlook.com>"]
 description = "RPi SIM868 is a crate designed to facilitate interaction with the Waveshare SIM868 HAT for Raspberry Pi."

@@ -56,8 +56,8 @@ where
         format!("AT+HTTPPARA=URL,{}\n", url),
     ];
 
-    if let Some(headers) = &request.headers {
-        commands.push(format!("AT+HTTPPARA=USERDATA,\"{}\"\n", headers))
+    if let Some(userdata_header) = &request.userdata_header {
+        commands.push(format!("AT+HTTPPARA=USERDATA,\"{}\"\n", userdata_header))
     }
 
     if matches!(request.method, RequestMethod::POST) {
