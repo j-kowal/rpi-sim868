@@ -180,7 +180,7 @@ where
 {
     pub content_type: Option<ContentType>,
     pub data: T,
-    pub headers: Option<String>,
+    pub userdata_header: Option<String>,
     pub method: RequestMethod,
     pub url: String,
 }
