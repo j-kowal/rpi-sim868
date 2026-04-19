@@ -25,8 +25,8 @@ pub struct SerialPort {
 #[derive(PartialEq, PartialOrd, Ord, Eq, Debug)]
 #[allow(clippy::upper_case_acronyms)]
 pub enum TaskPriority {
-    Normal,
-    High,
+    NORMAL,
+    HIGH,
 }
 
 fn debug_log(task_id: &Uuid, msg: &str) {
