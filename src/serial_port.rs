@@ -57,7 +57,7 @@ async fn await_in_queue(task_id: &Uuid, serial_port: &Arc<SerialPort>) {
 }
 
 async fn remove_from_queue(task_id: &Uuid, serial_port: &Arc<SerialPort>) {
-    serial_port.queue.write().await.remove(&task_id);
+    serial_port.queue.write().await.remove(task_id);
     debug_log(task_id, "removed from the queue.");
 }
 

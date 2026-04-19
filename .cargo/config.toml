@@ -1,0 +1,12 @@
+[target.armv7-unknown-linux-gnueabihf]
+linker = "arm-linux-gnueabihf-gcc"
+
+# For macOS, you might need to specify the full path:
+# linker = "/opt/homebrew/bin/arm-linux-gnueabihf-gcc"
+
+# Enable more optimizations for release builds
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
