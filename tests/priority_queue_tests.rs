@@ -6,6 +6,7 @@ use uuid::Uuid;
 
 /// Priority levels for task scheduling
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug, Hash)]
+#[allow(clippy::upper_case_acronyms)]
 pub enum TaskPriority {
     NORMAL = 0,
     HIGH = 1,

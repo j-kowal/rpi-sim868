@@ -8,6 +8,7 @@ use uuid::Uuid;
 
 /// Task priority levels matching the library
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
+#[allow(clippy::upper_case_acronyms)]
 pub enum TaskPriority {
     NORMAL = 0,
     HIGH = 1,
@@ -171,6 +172,7 @@ async fn test_rapid_queue_operations() {
 #[tokio::test]
 async fn test_at_command_priority_handling() {
     #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+    #[allow(clippy::upper_case_acronyms)]
     enum ATCmdPriority {
         NORMAL,
         URGENT, // For calls
