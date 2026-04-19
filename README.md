@@ -17,12 +17,20 @@ Methods (except for `HAT::turn_on`) return `TaskJoinHandle<T>`, where `T` repres
 
 RPi SIM868 was conceived following a high-altitude balloon launch where the HAT served as a backup tracking device. The initial software, written in Python, lacked the performance and safety synonymous with Rust.
 
+## Features
+
+- **Async Task Scheduler**: Priority queue-based task management with HIGH and NORMAL priorities
+- **Phone Call Priority**: Incoming/outgoing calls are handled with highest priority
+- **Cross-Platform**: Build natively on Raspberry Pi or cross-compile from macOS/Linux
+- **Modular Design**: Separate modules for HAT, SMS, GNSS, GPRS, and Phone functionality
+- **Comprehensive Testing**: 52+ unit tests covering priority queue, parsing, and error handling
+
 ## Building
 
 ### Prerequisites
 
 - Rust 1.56+ 
-- Linux OS (or macOS with cross-compilation)
+- Linux OS for native builds (or macOS with cross-compilation)
 
 ### Quick Start
 
@@ -44,8 +52,23 @@ brew install armv7-unknown-linux-gnueabihf
 # Add Rust target
 rustup target add armv7-unknown-linux-gnueabihf
 
-# Build
+# Build using Make
 make build-arm-release
+
+# Or use the build script
+./scripts/build-arm.sh release
+```
+
+**Linux Setup:**
+```bash
+# Install ARM cross-compiler
+sudo apt-get install gcc-arm-linux-gnueabihf
+
+# Add Rust target
+rustup target add armv7-unknown-linux-gnueabihf
+
+# Build
+cargo build --target armv7-unknown-linux-gnueabihf --release
 ```
 
 **Using Make:**
@@ -55,23 +78,55 @@ make build-arm-release # Release build
 make deploy            # Deploy to Raspberry Pi
 ```
 
-**Direct cargo:**
-```bash
-# Using the build script
-./scripts/build-arm.sh
-
-# Or manually
-cargo build --target armv7-unknown-linux-gnueabihf --release
-```
-
 ### Deployment
 
 ```bash
 # Copy binary to Raspberry Pi
 make deploy
 
-# Or manually
+# Or manually with rsync
 rsync -avz target/armv7-unknown-linux-gnueabihf/release/ pi@raspberrypi.local:/home/pi/rpi-sim868/
+
+# Or with scp
+scp target/armv7-unknown-linux-gnueabihf/release/*.so pi@raspberrypi.local:/home/pi/
+```
+
+## Testing
+
+The project includes 52+ comprehensive unit tests covering:
+
+- **Priority Queue** (12 tests): FIFO ordering, priority handling, task removal
+- **AT Command Parsing** (16 tests): Response parsing, error detection, edge cases
+- **Error Handling** (13 tests): Error propagation, conversions, recovery strategies
+- **Async Integration** (11 tests): Concurrent operations, timeouts, cleanup
+
+### Running Tests
+
+```bash
+# Run all tests (requires Linux or WSL - uses mock feature on macOS)
+cargo test --tests --no-default-features --features mock
+
+# Run specific test module
+cargo test --test priority_queue_tests --no-default-features --features mock
+cargo test --test parser_tests --no-default-features --features mock
+cargo test --test error_tests --no-default-features --features mock
+cargo test --test integration_tests --no-default-features --features mock
+
+# Run with output
+cargo test --tests --no-default-features --features mock -- --nocapture
+```
+
+### Feature Flags
+
+- `hardware` (default): Enables hardware support via rppal (Raspberry Pi only)
+- `mock`: Enables mock implementations for testing without hardware
+
+```bash
+# Build without hardware support (for testing)
+cargo build --no-default-features --features mock
+
+# Build with hardware support (for Raspberry Pi)
+cargo build --release
 ```
 
 ## CI/CD
@@ -79,20 +134,47 @@ rsync -avz target/armv7-unknown-linux-gnueabihf/release/ pi@raspberrypi.local:/h
 This project uses GitHub Actions for automated builds:
 - **Linting**: `cargo fmt` and `cargo clippy` on every PR
 - **Cross-compilation**: Automatic ARM builds on every push
+- **Testing**: All unit tests run on every PR
 - **Releases**: Automated releases when tags are pushed
 
 See `.github/workflows/rust.yml` for details.
 
-## Tested SIM868 UART selection switch: 
-- **A** - `ttyUSBx` port 
-- **B** - `ttySx` port.
+## Tested SIM868 UART Selection Switch
 
-## Tested devices: 
-- RPi 3 Model B
-- RPi 4 Model B 
-- RPi Zero W
-- RPi Zero 2 W
+- **A** - `ttyUSBx` port (USB interface)
+- **B** - `ttySx` port (UART interface)
+
+## Tested Devices
+
+- Raspberry Pi 3 Model B
+- Raspberry Pi 4 Model B 
+- Raspberry Pi Zero W
+- Raspberry Pi Zero 2 W
+
+## Architecture
+
+### Task Priority System
+
+Tasks are scheduled using a priority queue with two levels:
+- **HIGH**: Phone calls (incoming/outgoing), urgent operations
+- **NORMAL**: SMS, GNSS, GPRS, general HAT operations
+
+### Modules
+
+- `hat`: HAT control (power, signal strength, network status)
+- `sms`: SMS sending and receiving
+- `gnss`: GPS/GNSS positioning and tracking
+- `gprs`: HTTP requests and data connectivity
+- `phone`: Voice calls (dial, answer, hangup)
 
 ## License
 
 MIT License - see [LICENSE](LICENSE) file for details.
+
+## Contributing
+
+Contributions are welcome! Please ensure:
+1. Code follows `cargo fmt` formatting
+2. All tests pass: `cargo test`
+3. Clippy warnings are addressed: `cargo clippy`
+4. Changes are documented in PR description
