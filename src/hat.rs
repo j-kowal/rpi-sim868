@@ -79,7 +79,7 @@ impl Hat {
         toggle_power_pin.set_high();
     }
 
-    #[cfg(not(feature = "hardware"))]
+    #[cfg(all(not(feature = "hardware"), feature = "mock"))]
     fn toggle_power(&self) {
         // Mock implementation for tests
         sleep(Duration::from_millis(10));

@@ -54,7 +54,7 @@ pub enum Error {
     TokioJoinError(tokio::task::JoinError),
     #[cfg(feature = "hardware")]
     Uart(rppal::uart::Error),
-    #[cfg(not(feature = "hardware"))]
+    #[cfg(all(not(feature = "hardware"), feature = "mock"))]
     Uart(std::io::Error),
     UrlParse(url::ParseError),
 }
@@ -128,7 +128,7 @@ impl From<rppal::uart::Error> for Error {
     }
 }
 
-#[cfg(not(feature = "hardware"))]
+#[cfg(all(not(feature = "hardware"), feature = "mock"))]
 impl From<std::io::Error> for Error {
     fn from(err: std::io::Error) -> Error {
         Error::Uart(err)

@@ -120,7 +120,7 @@ fn uart_read<T>(
     }
 }
 
-#[cfg(not(feature = "hardware"))]
+#[cfg(all(not(feature = "hardware"), feature = "mock"))]
 fn uart_read<T>(
     _task_id: &Uuid,
     _uart: &mut (),
@@ -204,7 +204,7 @@ impl SerialPort {
     }
 }
 
-#[cfg(not(feature = "hardware"))]
+#[cfg(all(not(feature = "hardware"), feature = "mock"))]
 impl SerialPort {
     pub fn new(_path: &str, _baud_rate: u32) -> Self {
         SerialPort {
