@@ -8,9 +8,11 @@ use crate::{
     serial_port::{spawn_task, SerialPort, TaskPriority},
     Module, ResolverReturn, TaskJoinHandle, HAT_SIGNAL_STRENGHT_REGEX, PARSING_ERROR,
 };
-use rppal::gpio::{Gpio, OutputPin};
 use std::{sync::Arc, thread::sleep, time::Duration};
 use uuid::Uuid;
+
+#[cfg(feature = "hardware")]
+use rppal::gpio::{Gpio, OutputPin};
 
 const TOGGLE_POWER_PIN: u8 = 4;
 
@@ -65,6 +67,7 @@ impl Module for Hat {
 }
 
 impl Hat {
+    #[cfg(feature = "hardware")]
     fn toggle_power(&self) {
         let mut toggle_power_pin: OutputPin = Gpio::new()
             .expect("Can't connect to GPIO")
@@ -74,6 +77,12 @@ impl Hat {
         toggle_power_pin.set_low();
         sleep(Duration::from_millis(4000));
         toggle_power_pin.set_high();
+    }
+
+    #[cfg(not(feature = "hardware"))]
+    fn toggle_power(&self) {
+        // Mock implementation for tests
+        sleep(Duration::from_millis(10));
     }
 
     pub fn is_on(&self) -> TaskJoinHandle<bool> {

@@ -4,7 +4,6 @@ use crate::{
 };
 use colored::Colorize;
 use priority_queue::PriorityQueue;
-use rppal::uart::{Parity, Uart};
 use std::{
     sync::{Arc, Mutex},
     time::{Duration, Instant},
@@ -12,9 +11,13 @@ use std::{
 use tokio::{spawn, sync::RwLock, time::sleep};
 use uuid::Uuid;
 
+#[cfg(feature = "hardware")]
+use rppal::uart::{Parity, Uart};
+
 const MUTEX_POISONED_MSG: &str = "Critical error: Mutex is poisoned.";
 
 pub struct SerialPort {
+    #[cfg(feature = "hardware")]
     uart: Arc<Mutex<Uart>>,
     queue: Arc<RwLock<PriorityQueue<Uuid, TaskPriority>>>,
 }
@@ -61,6 +64,7 @@ async fn remove_from_queue(task_id: &Uuid, serial_port: &Arc<SerialPort>) {
     debug_log(task_id, "removed from the queue.");
 }
 
+#[cfg(feature = "hardware")]
 fn uart_read<T>(
     task_id: &Uuid,
     uart: &mut std::sync::MutexGuard<'_, Uart>,
@@ -115,6 +119,17 @@ fn uart_read<T>(
     }
 }
 
+#[cfg(not(feature = "hardware"))]
+fn uart_read<T>(
+    _task_id: &Uuid,
+    _uart: &mut (),
+    _timeout: Duration,
+    resolver: fn(String) -> ResolverReturn<T>,
+) -> ResolverReturn<T> {
+    // Mock implementation for tests
+    resolver(String::new())
+}
+
 pub fn spawn_task<T1, T2>(
     serial_port: Arc<SerialPort>,
     priority: TaskPriority,
@@ -138,6 +153,7 @@ where
     })
 }
 
+#[cfg(feature = "hardware")]
 impl SerialPort {
     pub fn new(path: &str, baud_rate: u32) -> Self {
         let mut uart: Uart = Uart::with_path(path, baud_rate, Parity::None, 8, 1)
@@ -184,5 +200,37 @@ impl SerialPort {
         uart.write(input.as_bytes())?;
         let read: ResolverReturn<T> = uart_read(task_id, &mut uart, timeout, resolver);
         read
+    }
+}
+
+#[cfg(not(feature = "hardware"))]
+impl SerialPort {
+    pub fn new(_path: &str, _baud_rate: u32) -> Self {
+        SerialPort {
+            queue: Arc::new(RwLock::new(PriorityQueue::new())),
+        }
+    }
+
+    pub fn write(&self, _task_id: &Uuid, _input: String) -> ResolverReturn<()> {
+        Ok(())
+    }
+
+    pub fn read<T>(
+        &self,
+        _task_id: &Uuid,
+        resolver: fn(String) -> ResolverReturn<T>,
+        _timeout: Option<Duration>,
+    ) -> ResolverReturn<T> {
+        resolver(String::new())
+    }
+
+    pub fn process<T>(
+        &self,
+        _task_id: &Uuid,
+        _input: String,
+        resolver: fn(String) -> ResolverReturn<T>,
+        _timeout: Option<Duration>,
+    ) -> ResolverReturn<T> {
+        resolver(String::new())
     }
 }

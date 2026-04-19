@@ -1,4 +1,7 @@
+#![allow(dead_code)]
+
 /// returned by [`Error::kind`] method.
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ErrorKind {
     GnssModuleOff,
     GnssNotFixed,
@@ -49,7 +52,10 @@ pub enum Error {
     SmsProblemWithSettingTextMode,
     SmsRemoveMessageFailed,
     TokioJoinError(tokio::task::JoinError),
+    #[cfg(feature = "hardware")]
     Uart(rppal::uart::Error),
+    #[cfg(not(feature = "hardware"))]
+    Uart(std::io::Error),
     UrlParse(url::ParseError),
 }
 
@@ -115,8 +121,16 @@ impl Error {
     }
 }
 
+#[cfg(feature = "hardware")]
 impl From<rppal::uart::Error> for Error {
     fn from(err: rppal::uart::Error) -> Error {
+        Error::Uart(err)
+    }
+}
+
+#[cfg(not(feature = "hardware"))]
+impl From<std::io::Error> for Error {
+    fn from(err: std::io::Error) -> Error {
         Error::Uart(err)
     }
 }
