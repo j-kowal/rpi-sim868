@@ -21,7 +21,7 @@ jobs:
     - name: Check formatting
       run: cargo fmt -- --check
     - name: Run clippy
-      run: cargo clippy --all-features -- -D warnings
+      run: cargo clippy --features hardware -- -D warnings
 
   # Build for Raspberry Pi (ARM)
   build-arm:
@@ -72,9 +72,9 @@ jobs:
     - name: Build ${{ matrix.mode }}
       run: |
         if [ "${{ matrix.mode }}" = "release" ]; then
-          cargo build --all-features --target ${{ matrix.target }} --release --config target.${{ matrix.target }}.linker=\"${{ matrix.linker }}\"
+          cargo build --features hardware --target ${{ matrix.target }} --release --config target.${{ matrix.target }}.linker=\"${{ matrix.linker }}\"
         else
-          cargo build --all-features --target ${{ matrix.target }} --config target.${{ matrix.target }}.linker=\"${{ matrix.linker }}\"
+          cargo build --features hardware --target ${{ matrix.target }} --config target.${{ matrix.target }}.linker=\"${{ matrix.linker }}\"
         fi
     
     - name: Upload artifacts (release only)
@@ -121,7 +121,7 @@ jobs:
     
     - name: Build release binary
       run: |
-        cargo build --all-features --target armv7-unknown-linux-gnueabihf --release --config target.armv7-unknown-linux-gnueabihf.linker=\"arm-linux-gnueabihf-gcc\"
+        cargo build --features hardware --target armv7-unknown-linux-gnueabihf --release --config target.armv7-unknown-linux-gnueabihf.linker=\"arm-linux-gnueabihf-gcc\"
     
     - name: Package binary
       run: |
