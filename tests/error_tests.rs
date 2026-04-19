@@ -50,7 +50,7 @@ fn test_error_kind_mapping() {
         SmsNotSent,
         GprsNoConnection,
     }
-    
+
     #[derive(Debug)]
     enum TestError {
         NotResolved,
@@ -59,7 +59,7 @@ fn test_error_kind_mapping() {
         SmsNotSent,
         GprsNoConnection,
     }
-    
+
     impl TestError {
         fn kind(&self) -> ErrorKind {
             match self {
@@ -71,14 +71,14 @@ fn test_error_kind_mapping() {
             }
         }
     }
-    
+
     // Test that error kind mapping works correctly
     let err1 = TestError::NotResolved;
     assert_eq!(err1.kind(), ErrorKind::NotResolved);
-    
+
     let err2 = TestError::GnssProblem;
     assert_eq!(err2.kind(), ErrorKind::GnssProblem);
-    
+
     let err3 = TestError::SmsNotSent;
     assert_eq!(err3.kind(), ErrorKind::SmsNotSent);
 }
@@ -93,23 +93,29 @@ fn test_error_display() {
         GprsNoConnection,
         PhoneCallNotAnswered,
     }
-    
+
     impl std::fmt::Display for TestError {
         fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
             match self {
-                TestError::NotResolved => write!(f, "Task NotResolved - please check if the hat is switched on."),
+                TestError::NotResolved => write!(
+                    f,
+                    "Task NotResolved - please check if the hat is switched on."
+                ),
                 TestError::GnssModuleOff => write!(f, "GNSS - module is off."),
                 TestError::GprsNoConnection => write!(f, "GPRS - no connection to the network."),
-                TestError::PhoneCallNotAnswered => write!(f, "Phone - there was an error while trying to answer the call."),
+                TestError::PhoneCallNotAnswered => write!(
+                    f,
+                    "Phone - there was an error while trying to answer the call."
+                ),
             }
         }
     }
-    
+
     let err = TestError::NotResolved;
     let display = format!("{}", err);
     assert!(display.contains("NotResolved"));
     assert!(display.contains("hat is switched on"));
-    
+
     let err2 = TestError::GnssModuleOff;
     assert!(format!("{}", err2).contains("GNSS"));
 }
@@ -123,14 +129,14 @@ fn test_error_equality() {
         Uart,
         GnssProblem,
     }
-    
+
     #[derive(Debug, Clone, PartialEq)]
     enum TestError {
         NotResolved,
         Uart(String),
         GnssProblem,
     }
-    
+
     impl TestError {
         fn kind(&self) -> ErrorKind {
             match self {
@@ -140,11 +146,11 @@ fn test_error_equality() {
             }
         }
     }
-    
+
     let err1 = TestError::NotResolved;
     let err2 = TestError::NotResolved;
     let err3 = TestError::Uart("test".to_string());
-    
+
     assert_eq!(err1, err2);
     assert_ne!(err1.kind(), err3.kind());
 }
@@ -156,22 +162,22 @@ fn test_error_trait() {
     struct TestError {
         message: String,
     }
-    
+
     impl std::fmt::Display for TestError {
         fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
             write!(f, "{}", self.message)
         }
     }
-    
+
     impl Error for TestError {}
-    
+
     let err = TestError {
         message: "Test error message".to_string(),
     };
-    
+
     // Verify it implements Error trait
     let _: &dyn Error = &err;
-    
+
     // Verify description
     assert_eq!(err.to_string(), "Test error message");
 }
@@ -184,7 +190,7 @@ fn test_custom_result_type() {
         NotResolved,
         InvalidInput,
     }
-    
+
     impl std::fmt::Display for TestError {
         fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
             match self {
@@ -193,22 +199,22 @@ fn test_custom_result_type() {
             }
         }
     }
-    
+
     impl Error for TestError {}
-    
+
     type TestResult<T> = Result<T, TestError>;
-    
+
     fn success_fn() -> TestResult<i32> {
         Ok(42)
     }
-    
+
     fn error_fn() -> TestResult<i32> {
         Err(TestError::NotResolved)
     }
-    
+
     assert!(success_fn().is_ok());
     assert_eq!(success_fn().unwrap(), 42);
-    
+
     assert!(error_fn().is_err());
     assert_eq!(error_fn().unwrap_err(), TestError::NotResolved);
 }
@@ -220,31 +226,31 @@ fn test_error_propagation() {
     enum InnerError {
         Fail,
     }
-    
+
     #[derive(Debug)]
     enum OuterError {
         Inner(InnerError),
         Other,
     }
-    
+
     impl From<InnerError> for OuterError {
         fn from(err: InnerError) -> OuterError {
             OuterError::Inner(err)
         }
     }
-    
+
     fn inner_op() -> Result<(), InnerError> {
         Err(InnerError::Fail)
     }
-    
+
     fn outer_op() -> Result<(), OuterError> {
         inner_op()?;
         Ok(())
     }
-    
+
     let result = outer_op();
     assert!(result.is_err());
-    
+
     match result {
         Err(OuterError::Inner(_)) => (), // Expected
         _ => panic!("Expected Inner error"),
@@ -261,7 +267,7 @@ fn test_error_matching_with_kind() {
         GnssProblem,
         SmsNotSent,
     }
-    
+
     #[derive(Debug)]
     enum TestError {
         NotResolved,
@@ -269,7 +275,7 @@ fn test_error_matching_with_kind() {
         GnssProblem,
         SmsNotSent,
     }
-    
+
     impl TestError {
         fn kind(&self) -> ErrorKind {
             match self {
@@ -280,7 +286,7 @@ fn test_error_matching_with_kind() {
             }
         }
     }
-    
+
     fn handle_error(err: &TestError) -> &'static str {
         match err.kind() {
             ErrorKind::NotResolved => "retry",
@@ -289,7 +295,7 @@ fn test_error_matching_with_kind() {
             ErrorKind::SmsNotSent => "retry_sms",
         }
     }
-    
+
     assert_eq!(handle_error(&TestError::NotResolved), "retry");
     assert_eq!(handle_error(&TestError::Uart), "check_connection");
     assert_eq!(handle_error(&TestError::GnssProblem), "check_antenna");
@@ -302,7 +308,7 @@ fn test_error_chain() {
     enum LowLevelError {
         Io(std::io::Error),
     }
-    
+
     impl std::fmt::Display for LowLevelError {
         fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
             match self {
@@ -310,21 +316,21 @@ fn test_error_chain() {
             }
         }
     }
-    
+
     impl Error for LowLevelError {}
-    
+
     #[derive(Debug)]
     enum HighLevelError {
         Low(LowLevelError),
         Other,
     }
-    
+
     impl From<LowLevelError> for HighLevelError {
         fn from(err: LowLevelError) -> HighLevelError {
             HighLevelError::Low(err)
         }
     }
-    
+
     impl std::fmt::Display for HighLevelError {
         fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
             match self {
@@ -333,7 +339,7 @@ fn test_error_chain() {
             }
         }
     }
-    
+
     impl Error for HighLevelError {
         fn source(&self) -> Option<&(dyn Error + 'static)> {
             match self {
@@ -342,11 +348,14 @@ fn test_error_chain() {
             }
         }
     }
-    
+
     // Create a chain
-    let low = LowLevelError::Io(std::io::Error::new(std::io::ErrorKind::NotFound, "file not found"));
+    let low = LowLevelError::Io(std::io::Error::new(
+        std::io::ErrorKind::NotFound,
+        "file not found",
+    ));
     let high = HighLevelError::Low(low);
-    
+
     // Verify error is present
     assert!(high.to_string().contains("High level"));
 }
@@ -355,16 +364,16 @@ fn test_error_chain() {
 #[test]
 fn test_timeout_error() {
     use std::time::{Duration, Instant};
-    
+
     #[derive(Debug, PartialEq)]
     enum OperationError {
         Timeout,
         Success,
     }
-    
+
     fn operation_with_timeout(timeout: Duration) -> Result<i32, OperationError> {
         let start = Instant::now();
-        
+
         // Simulate work
         while start.elapsed() < timeout {
             // Do some work...
@@ -372,10 +381,10 @@ fn test_timeout_error() {
                 return Err(OperationError::Timeout);
             }
         }
-        
+
         Ok(42)
     }
-    
+
     // Test timeout
     let result = operation_with_timeout(Duration::from_millis(100));
     assert!(result.is_err());
@@ -390,23 +399,23 @@ fn test_error_recovery() {
         Transient,
         Permanent,
     }
-    
+
     fn retryable_operation(max_retries: u32) -> Result<i32, TestError> {
         let mut attempts = 0;
-        
+
         loop {
             attempts += 1;
-            
+
             // Simulate transient error
             if attempts < max_retries {
                 continue; // Retry
             }
-            
+
             // After max retries, succeed
             return Ok(42);
         }
     }
-    
+
     let result = retryable_operation(3);
     assert!(result.is_ok());
     assert_eq!(result.unwrap(), 42);
@@ -420,18 +429,18 @@ fn test_error_logging_context() {
         operation: String,
         error: String,
     }
-    
+
     impl std::fmt::Display for ContextualError {
         fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
             write!(f, "Error during '{}': {}", self.operation, self.error)
         }
     }
-    
+
     let err = ContextualError {
         operation: "UART read".to_string(),
         error: "Timeout".to_string(),
     };
-    
+
     let message = format!("{}", err);
     assert!(message.contains("UART read"));
     assert!(message.contains("Timeout"));
@@ -444,25 +453,25 @@ fn test_from_trait_conversions() {
     enum OuterError {
         Inner(String),
     }
-    
+
     impl From<&str> for OuterError {
         fn from(s: &str) -> OuterError {
             OuterError::Inner(s.to_string())
         }
     }
-    
+
     impl From<String> for OuterError {
         fn from(s: String) -> OuterError {
             OuterError::Inner(s)
         }
     }
-    
+
     // Test conversion from &str
     let err1: OuterError = "test error".into();
     match err1 {
         OuterError::Inner(s) => assert_eq!(s, "test error"),
     }
-    
+
     // Test conversion from String
     let err2: OuterError = String::from("another error").into();
     match err2 {
@@ -475,23 +484,23 @@ fn test_from_trait_conversions() {
 fn test_error_thread_safety() {
     use std::sync::Arc;
     use std::thread;
-    
+
     #[derive(Debug, Clone)]
     struct ThreadSafeError {
         code: u32,
     }
-    
+
     // Verify Send trait
     fn assert_send<T: Send>() {}
     assert_send::<ThreadSafeError>();
-    
-    // Verify Sync trait  
+
+    // Verify Sync trait
     fn assert_sync<T: Sync>() {}
     assert_sync::<ThreadSafeError>();
-    
+
     // Use in multi-threaded context
     let error = Arc::new(ThreadSafeError { code: 42 });
-    
+
     let handles: Vec<_> = (0..4)
         .map(|_| {
             let err = Arc::clone(&error);
@@ -500,7 +509,7 @@ fn test_error_thread_safety() {
             })
         })
         .collect();
-    
+
     for handle in handles {
         handle.join().unwrap();
     }
