@@ -72,7 +72,7 @@ impl Hat {
         let mut toggle_power_pin: OutputPin = Gpio::new()
             .expect("Can't connect to GPIO")
             .get(TOGGLE_POWER_PIN)
-            .expect(format!("Can't connect to the GPIO {TOGGLE_POWER_PIN} pin").as_str())
+            .unwrap_or_else(|_| panic!("Can't connect to the GPIO {TOGGLE_POWER_PIN} pin"))
             .into_output();
         toggle_power_pin.set_low();
         sleep(Duration::from_millis(4000));

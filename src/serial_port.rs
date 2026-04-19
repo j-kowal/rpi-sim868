@@ -23,9 +23,10 @@ pub struct SerialPort {
 }
 
 #[derive(PartialEq, PartialOrd, Ord, Eq, Debug)]
+#[allow(clippy::upper_case_acronyms)]
 pub enum TaskPriority {
-    NORMAL,
-    HIGH,
+    Normal,
+    High,
 }
 
 fn debug_log(task_id: &Uuid, msg: &str) {
@@ -183,7 +184,7 @@ impl SerialPort {
     ) -> ResolverReturn<T> {
         let timeout: Duration = timeout.unwrap_or(Duration::from_millis(1000));
         let mut uart: std::sync::MutexGuard<'_, Uart> = self.uart.lock().expect(MUTEX_POISONED_MSG);
-        let read: ResolverReturn<T> = uart_read(&task_id, &mut uart, timeout, resolver);
+        let read: ResolverReturn<T> = uart_read(task_id, &mut uart, timeout, resolver);
         read
     }
 
