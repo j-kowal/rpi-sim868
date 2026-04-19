@@ -83,7 +83,7 @@ fn is_on(serial_port: &Arc<SerialPort>, task_id: &Uuid, _: ()) -> ResolverReturn
         match GNSS_POWER_REGEX.captures(&result) {
             Some(captured) => {
                 let status: u8 = captured["number"].parse().expect(PARSING_ERROR);
-                Ok(if status == 1 { true } else { false })
+                Ok(status == 1)
             }
             None => Err(Error::NotResolved),
         }

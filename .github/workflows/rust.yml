@@ -1,28 +1,158 @@
-name: Rust
+name: Rust CI
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
+  # Check formatting and linting
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: dtolnay/rust-toolchain@stable
+      with:
+        components: rustfmt, clippy
+    - name: Check formatting
+      run: cargo fmt -- --check
+    - name: Run clippy
+      run: cargo clippy --all-features -- -D warnings
+
+  # Build for Raspberry Pi (ARM)
+  build-arm:
     strategy:
-        matrix:
-          include:
-          - target: "armv7-unknown-linux-gnueabihf"
-            linker: "arm-linux-gnueabihf-gcc"
-            dependencies: "crossbuild-essential-armhf"
+      matrix:
+        target: [armv7-unknown-linux-gnueabihf]
+        mode: [debug, release]
+        include:
+          - target: armv7-unknown-linux-gnueabihf
+            linker: arm-linux-gnueabihf-gcc
+            dependencies: crossbuild-essential-armhf
 
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v3
-    - name: Install target
-      run: rustup target add ${{ matrix.target }}
-    - name: Install dependencies
-      run: sudo apt-get -qq install ${{ matrix.dependencies }}
-    - name: Build (debug)
-      run: cargo build --all-features --target ${{ matrix.target }} --config target.${{ matrix.target }}.linker=\"${{ matrix.linker }}\"
-    - name: Build (release)
-      run: cargo build --all-features --target ${{ matrix.target }} --config target.${{ matrix.target }}.linker=\"${{ matrix.linker }}\" --release
+    - uses: actions/checkout@v4
+    
+    - name: Cache cargo registry
+      uses: actions/cache@v4
+      with:
+        path: ~/.cargo/registry
+        key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-registry-
+    
+    - name: Cache cargo index
+      uses: actions/cache@v4
+      with:
+        path: ~/.cargo/git
+        key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-index-
+    
+    - name: Cache target directory
+      uses: actions/cache@v4
+      with:
+        path: target
+        key: ${{ runner.os }}-cargo-build-${{ matrix.target }}-${{ matrix.mode }}-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-build-${{ matrix.target }}-${{ matrix.mode }}-
+    
+    - uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: ${{ matrix.target }}
+    
+    - name: Install ARM linker
+      run: sudo apt-get update && sudo apt-get -qq install ${{ matrix.dependencies }}
+    
+    - name: Build ${{ matrix.mode }}
+      run: |
+        if [ "${{ matrix.mode }}" = "release" ]; then
+          cargo build --all-features --target ${{ matrix.target }} --release --config target.${{ matrix.target }}.linker=\"${{ matrix.linker }}\"
+        else
+          cargo build --all-features --target ${{ matrix.target }} --config target.${{ matrix.target }}.linker=\"${{ matrix.linker }}\"
+        fi
+    
+    - name: Upload artifacts (release only)
+      if: matrix.mode == 'release'
+      uses: actions/upload-artifact@v4
+      with:
+        name: rpi_sim868_arm_release
+        path: target/${{ matrix.target }}/release/*.so
+        if-no-files-found: ignore
+
+  # Run tests
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Cache cargo registry
+      uses: actions/cache@v4
+      with:
+        path: ~/.cargo/registry
+        key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-registry-
+    
+    - uses: dtolnay/rust-toolchain@stable
+    
+    - name: Run tests
+      run: cargo test --tests --no-default-features --features mock
+
+  # Create release on tag push
+  release:
+    needs: [lint, build-arm, test]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+    - uses: actions/checkout@v4
+    
+    - uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: armv7-unknown-linux-gnueabihf
+    
+    - name: Install ARM linker
+      run: sudo apt-get update && sudo apt-get -qq install crossbuild-essential-armhf
+    
+    - name: Build release binary
+      run: |
+        cargo build --all-features --target armv7-unknown-linux-gnueabihf --release --config target.armv7-unknown-linux-gnueabihf.linker=\"arm-linux-gnueabihf-gcc\"
+    
+    - name: Package binary
+      run: |
+        mkdir -p release
+        cp target/armv7-unknown-linux-gnueabihf/release/*.rlib release/ 2>/dev/null || true
+        cp target/armv7-unknown-linux-gnueabihf/release/*.so release/ 2>/dev/null || true
+        cp README.md release/
+        cp LICENSE release/ 2>/dev/null || true
+        tar -czf rpi-sim868-${GITHUB_REF_NAME}.tar.gz -C release .
+    
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        name: "RPi SIM868 ${{ github.ref_name }}"
+        body: |
+          ## Release ${{ github.ref_name }}
+          
+          ### Changes
+          See [CHANGELOG.md](CHANGELOG.md) or Git history for details.
+          
+          ### Installation
+          Download the tarball and extract to your Raspberry Pi:
+          ```bash
+          tar -xzf rpi-sim868-${{ github.ref_name }}.tar.gz
+          ```
+          
+          ### Requirements
+          - Raspberry Pi with SIM868 HAT
+          - Rust 1.56+ (for building from source)
+        files: |
+          rpi-sim868-*.tar.gz
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

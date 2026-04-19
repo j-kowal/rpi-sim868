@@ -98,7 +98,7 @@ where
 
     serial_port.process(
         task_id,
-        format!("AT+HTTPDATA={},6000\n", data.as_bytes().len()),
+        format!("AT+HTTPDATA={},6000\n", data.len()),
         http_data_resolver,
         Some(Duration::from_secs(10)),
     )?;
@@ -126,11 +126,11 @@ pub fn action(
 pub fn read(serial_port: &Arc<SerialPort>, task_id: &Uuid) -> ResolverReturn<String> {
     fn resolver(result: String) -> ResolverReturn<String> {
         if error_check(&result) {
-            return Err(Error::GprsHttpRequestFailed);
-        }
-        match ACK_REGEX.is_match(&result) {
-            true => Ok(result),
-            false => Err(Error::NotResolved),
+            Err(Error::GprsHttpRequestFailed)
+        } else if ACK_REGEX.is_match(&result) {
+            Ok(result)
+        } else {
+            Err(Error::NotResolved)
         }
     }
 
@@ -145,7 +145,7 @@ pub fn read(serial_port: &Arc<SerialPort>, task_id: &Uuid) -> ResolverReturn<Str
 pub fn terminate(serial_port: &Arc<SerialPort>, task_id: &Uuid) -> ResolverReturn<()> {
     serial_port.process(
         task_id,
-        format!("AT+HTTPTERM\n"),
+        "AT+HTTPTERM\n".to_string(),
         http_request_resolver,
         None,
     )

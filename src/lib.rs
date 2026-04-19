@@ -113,12 +113,12 @@ fn error_check(text: &str) -> bool {
 }
 
 fn generic_resolver(result: &str, err: error::Error) -> ResolverReturn<()> {
-    if error_check(&result) {
-        return Err(err);
-    }
-    match ack_check(&result) {
-        true => Ok(()),
-        false => Err(error::Error::NotResolved),
+    if error_check(result) {
+        Err(err)
+    } else if ack_check(result) {
+        Ok(())
+    } else {
+        Err(error::Error::NotResolved)
     }
 }
 

@@ -51,7 +51,7 @@ fn conn_status(serial_port: &Arc<SerialPort>, task_id: &Uuid) -> ResolverReturn<
             let res: &Vec<&str> = &captured["data"].split(",").collect();
             Ok(res[1].parse::<u8>().expect(PARSING_ERROR))
         } else {
-            return Err(Error::NotResolved);
+            Err(Error::NotResolved)
         }
     }
 
@@ -60,7 +60,7 @@ fn conn_status(serial_port: &Arc<SerialPort>, task_id: &Uuid) -> ResolverReturn<
 
 fn conn_open(serial_port: &Arc<SerialPort>, task_id: &Uuid) -> ResolverReturn<()> {
     fn resolver(result: String) -> ResolverReturn<()> {
-        return generic_resolver(&result, Error::GprsConnectionOpenFailed);
+        generic_resolver(&result, Error::GprsConnectionOpenFailed)
     }
 
     serial_port.process(
@@ -73,7 +73,7 @@ fn conn_open(serial_port: &Arc<SerialPort>, task_id: &Uuid) -> ResolverReturn<()
 
 fn conn_close(serial_port: &Arc<SerialPort>, task_id: &Uuid, _: ()) -> ResolverReturn<()> {
     fn resolver(result: String) -> ResolverReturn<()> {
-        return generic_resolver(&result, Error::GprsConnectionCloseFailed);
+        generic_resolver(&result, Error::GprsConnectionCloseFailed)
     }
 
     serial_port.process(

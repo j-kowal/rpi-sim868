@@ -55,7 +55,7 @@ fn send(
 
     let (number, text) = args;
 
-    set_text_mode(&serial_port, &task_id)?;
+    set_text_mode(serial_port, task_id)?;
     serial_port.process(
         task_id,
         format!("AT+CMGS={number}\n{text}\x1A\n"),
@@ -70,10 +70,7 @@ fn get_messages(
     storage: MessageStorage,
 ) -> ResolverReturn<Vec<Message>> {
     fn resolver(result: String) -> ResolverReturn<Vec<Message>> {
-        let ok: Result<(), Error> = generic_resolver(&result, Error::SmsProblemWithReadingMessages);
-        if let Err(err) = ok {
-            return Err(err);
-        }
+        generic_resolver(&result, Error::SmsProblemWithReadingMessages)?;
 
         let messages: Vec<Message> = SMS_READ_MESSAGE_REGEX
             .captures_iter(&result)
@@ -83,7 +80,7 @@ fn get_messages(
         Ok(messages)
     }
 
-    set_text_mode(&serial_port, &task_id)?;
+    set_text_mode(serial_port, task_id)?;
     serial_port.process(
         task_id,
         format!(
@@ -108,7 +105,7 @@ fn remove_all_messages(
         generic_resolver(&result, Error::SmsRemoveMessageFailed)
     }
 
-    set_text_mode(&serial_port, &task_id)?;
+    set_text_mode(serial_port, task_id)?;
 
     let msg_storage: &str = match storage {
         MessageStorage::ALL => "DEL ALL",
