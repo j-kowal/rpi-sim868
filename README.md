@@ -139,6 +139,26 @@ This project uses GitHub Actions for automated builds:
 
 See `.github/workflows/rust.yml` for details.
 
+### Creating a Release
+
+To create a new release, push a tag to GitHub:
+
+```bash
+# Create and push a new tag (follows semantic versioning)
+git tag -a v0.2.0 -m "Release version 0.2.0"
+git push origin v0.2.0
+```
+
+GitHub Actions will automatically:
+1. Build the release binary for ARM
+2. Run all tests
+3. Create a GitHub Release with:
+   - Binary tarball (.tar.gz)
+   - Auto-generated release notes
+   - README and LICENSE
+
+Releases are available at: https://github.com/j-kowal/rpi-sim868/releases
+
 ## Tested SIM868 UART Selection Switch
 
 - **A** - `ttyUSBx` port (USB interface)
